@@ -53,6 +53,34 @@ thead {
   margin: 2vmin 0;
 }
 
+#data.nightly .mg-line1-color {
+  stroke: #4040e8;
+}
+#data.nightly .mg-area1-color {
+  fill: #0000FF;
+}
+
+#data.aurora .mg-line1-color {
+  stroke: #05b378;
+}
+#data.aurora .mg-area1-color {
+  fill: #00FF00;
+}
+
+#data.beta .mg-line1-color {
+  stroke: #db4437;
+}
+#data.beta .mg-area1-color {
+  fill: #FF0000;
+}
+
+#data.release .mg-line1-color {
+  stroke: #f8b128;
+}
+#data.release .mg-area1-color {
+  fill: #FFFF00;
+}
+
 #subdata {
   height: 25vh;
   width: 90vw;
@@ -286,6 +314,10 @@ function updateSubdata(latestDate) {
 }
 
 function updateData(date, channel, crash) {
+  let dataEl = document.getElementById("data");
+  CHANNELS.forEach(channel => dataEl.classList.remove(channel));
+  dataEl.classList.add(channel);
+
   let data = Object.keys(gMap).map(activityDate => {
     return {
       date: new Date(activityDate),
