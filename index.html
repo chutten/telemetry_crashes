@@ -7,7 +7,7 @@
 <!-- MG.js stuff --!>
 <script src="https://d3js.org/d3.v4.min.js"></script>
 <script src="mgjs/metricsgraphics.min.js"></script>
-<link href="mgjs/metricsgraphics.css" type="text/css">
+<link href="mgjs/metricsgraphics.css" rel="stylesheet" type="text/css">
 
 <style>
 
@@ -37,13 +37,24 @@ thead {
 #notice {
   color: orange;
 }
+
+#subdata {
+  height: 25vh;
+  width: 90vw;
+  margin: 2vmin 0;
+}
+
+.mg-active-datapoint tspan tspan:nth-child(2) {
+  /* baleet the little circle span, as the circle char doesn't exist in all fonts */
+  display: none;
+}
 </style>
 </head>
 <body>
 <h1>Stability Dashboard</h1>
 <h5>Analyzed date: <select id="analyzed-date"></select></h5>
 <h3>Firefox Desktop</h3>
-<p id="notice"></p>
+<p id="notice">&nbsp;</p>
 <table id="data-table">
   <thead>
     <tr>
@@ -57,6 +68,10 @@ thead {
   <tbody>
   </tbody>
 </table>
+<div id="data">
+</div>
+<div id="subdata">
+</div>
 <p>Cells are of the form <em>Rate (X%)</em> where:</p>
 <dt><em>Rate</em></dt>
 <dd>- (for crashes) is the number of that type of crash divided by the usage_khours</dd>
@@ -126,9 +141,11 @@ xhr.addEventListener("load", function() {
   dateSelect.addEventListener("change", function() {
     rebakeTable(this.selectedOptions[0].value);
     updateNotice(this.selectedOptions[0].value);
+    updateSubdata(this.selectedOptions[0].value);
   });
   rebakeTable(latestDate);
   updateNotice(latestDate);
+  updateSubdata(latestDate);
 });
 
 function getWeekAgo(latestDate) {
@@ -188,7 +205,7 @@ function updateNotice(latestDate) {
   let weekAgoDate = getWeekAgo(latestDate);
 
   let noticeEl = document.getElementById("notice");
-  noticeEl.textContent = "";
+  noticeEl.textContent = "&nbsp;";
 
   let minPercent = 10;
   let maxPercent = 0;
@@ -209,6 +226,37 @@ function updateNotice(latestDate) {
       `(${Number(minPercent * 100).toFixed(1)}%~${Number(maxPercent * 100).toFixed(1)}%) ` +
       `so you may not want to use these figures.`;
   }
+}
+
+function updateSubdata(latestDate) {
+  let data = [];
+  Object.keys(gMap).forEach(activityDate => {
+    let datum = { date: new Date(activityDate) };
+    CHANNELS.forEach(channel => datum[channel] = gMap[activityDate][channel].usage_khours);
+    data.push(datum);
+  });
+  MG.data_graphic({
+    title: "kusage_hours (log)",
+    description: "A description",
+    data: data,
+    full_width: true,
+    full_height: true,
+    show_tooltips: false,
+    target: "#subdata",
+    /*x_accessor: "activity_date",*/
+    y_accessor: CHANNELS,
+    y_scale_type: "log",
+    legend: CHANNELS,
+    legend_target: "#none",
+    yax_units: "Kuh",
+    yax_units_append: true,
+    markers: [{date: new Date(latestDate), label: "Analyzed Date"}],
+    utc_time: true,
+    left: 70,
+    top: 50,
+    right: 15,
+    bottom: 40,
+  });
 }
 
 xhr.addEventListener("error", () => {
