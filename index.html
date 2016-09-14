@@ -1,5 +1,7 @@
+<!DOCTYPE html>
 <html>
 <head>
+<meta name="viewport" content="width=device-width">
 <title>Crash Rates (Telemetry)</title>
 <style>
 
@@ -25,12 +27,17 @@ td.type-float {
 thead {
   font-weight: bold;
 }
+
+#notice {
+  color: orange;
+}
 </style>
 </head>
 <body>
 <h1>Stability Dashboard</h1>
 <h5>Analyzed date: <select id="analyzed-date"></select></h5>
 <h3>Firefox Desktop</h3>
+<p id="notice"></p>
 <table id="data-table">
   <thead>
     <tr>
@@ -46,13 +53,19 @@ thead {
 </table>
 <p>Cells are of the form <em>Rate (X%)</em> where:</p>
 <dt><em>Rate</em></dt>
-<dd>- is the number of that type of crash divided by the usage_khours (or, in the case of usage_khours, is just the number of usage_khours)<dd>
+<dd>- (for crashes) is the number of that type of crash divided by the usage_khours</dd>
+<dd>- (for usage_khours) is just the number of usage_khours<dd>
 <dt><em>(X%)</em></dt>
-<dd>- is the percent change in the number (not the rate) of that crash vs. last week's number (not rate) of that crash</dd>
+<dd>- (for crashes) is the percent that this week's number (not the rate) of crashes is vs. last week's number (not rate) of that crash</dd>
+<dd>- (for usage_khours) is the percent that this week's number is of last week's usage_khours</dd>
 <p>Since crash rates are <em>#crashes / usage_khours</em> a low <em>(X%)</em> in <em>usage_khours</em> can result in an inflation of crash rates.</p>
 <p>To estimate how much of an inflation, take a relatively-stable crash type (like <em>P</em>) and compare its <em>(X%)</em> to <em>usage_khours</em>'.</p>
 <p>As of yet, no model has been developed to do this properly, so YMMV.</p>
 <script>
+
+const CHANNELS = ["nightly", "aurora", "beta", "release"];
+const PERCENT_NOTICE_THRESHOLD = 0.5;
+
 var gData = undefined;
 var gMap = {};
 
@@ -104,14 +117,20 @@ xhr.addEventListener("load", function() {
   }
   dateSelect.addEventListener("change", function() {
     rebakeTable(this.selectedOptions[0].value);
+    updateNotice(this.selectedOptions[0].value);
   });
   rebakeTable(latestDate);
+  updateNotice(latestDate);
 });
 
-function rebakeTable(latestDate) {
+function getWeekAgo(latestDate) {
   let weekAgoDate = new Date(latestDate);
   weekAgoDate.setDate(weekAgoDate.getDate() - 7);
-  weekAgoDate = weekAgoDate.toISOString().slice(0, 10);
+  return weekAgoDate.toISOString().slice(0, 10);
+}
+
+function rebakeTable(latestDate) {
+  let weekAgoDate = getWeekAgo(latestDate);
 
   if (!gMap[weekAgoDate]) {
     console.error("No data from a week ago?!");
@@ -133,7 +152,7 @@ function rebakeTable(latestDate) {
     cell.textContent = column.friendly_name;
     row.appendChild(cell);
     tbody.appendChild(row);
-    ["nightly", "aurora", "beta", "release"].forEach((channel) => {
+    CHANNELS.forEach((channel) => {
       cell = document.createElement("td");
       cell.className = "type-" + column.type;
 
@@ -155,7 +174,33 @@ function rebakeTable(latestDate) {
       row.appendChild(cell);
     });
   });
+}
 
+function updateNotice(latestDate) {
+  let weekAgoDate = getWeekAgo(latestDate);
+
+  let noticeEl = document.getElementById("notice");
+  noticeEl.textContent = "";
+
+  let minPercent = 10;
+  let maxPercent = 0;
+  CHANNELS.forEach((channel) => {
+    let hours = gMap[latestDate][channel]["usage_khours"];
+    let percent = Number(hours) / Number(gMap[weekAgoDate][channel]["usage_khours"]);
+    if (percent < minPercent) {
+      minPercent = percent;
+    }
+    if (percent > maxPercent) {
+      maxPercent = percent;
+    }
+  });
+
+  if (maxPercent < PERCENT_NOTICE_THRESHOLD) {
+    noticeEl.textContent = '' +
+      `The usage_khours for ${latestDate} are low ` +
+      `(${Number(minPercent * 100).toFixed(1)}%~${Number(maxPercent * 100).toFixed(1)}%) ` +
+      `so you may not want to use these figures.`;
+  }
 }
 
 xhr.addEventListener("error", () => {
