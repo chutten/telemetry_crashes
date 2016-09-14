@@ -34,7 +34,8 @@ td.clickable {
   cursor: pointer;
 }
 
-td.clickable:hover {
+td.clickable:hover,
+td.clickable.clicked {
   background-color: lightgrey;
 }
 
@@ -208,7 +209,13 @@ function rebakeTable(latestDate) {
           let percent = Number(Number(crashes) / Number(gMap[weekAgoDate][channel][column.name]) * 100).toFixed(1);
           let usage = gMap[latestDate][channel]["usage_khours"];
           cell.textContent = Number(crashes / usage).toFixed(2) + " (" + percent + "%)";
-          cell.addEventListener("click", () => {
+
+          cell.addEventListener("click", function() {
+            for (clicked of document.querySelectorAll("td.clicked")) {
+              clicked.classList.remove("clicked");
+            }
+            this.classList.add("clicked");
+
             updateData(latestDate, channel, column.name);
           });
           cell.classList.add("clickable");
