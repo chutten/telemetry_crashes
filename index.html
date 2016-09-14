@@ -31,7 +31,6 @@ thead {
 <h1>Stability Dashboard</h1>
 <h5>Analyzed date: <span id="analyzed-date"></span></h5>
 <h3>Firefox Desktop</h3>
-<p><em>(X%)</em> means the current value is X% of last week's value.</p>
 <table id="data-table">
   <thead>
     <tr>
@@ -45,7 +44,33 @@ thead {
   <tbody>
   </tbody>
 </table>
+<p>Cells are of the form <em>Rate (X%)</em> where:</p>
+<dt><em>Rate</em></dt>
+<dd>- is the number of that type of crash divided by the usage_khours (or, in the case of usage_khours, is just the number of usage_khours)<dd>
+<dt><em>(X%)</em></dt>
+<dd>- is the percent change in the number (not the rate) of that crash vs. last week's number (not rate) of that crash</dd>
+<p>Since crash rates are <em>#crashes / usage_khours</em> a low <em>(X%)</em> in <em>usage_khours</em> can result in an inflation of crash rates.</p>
+<p>To estimate how much of an inflation, take a relatively-stable crash type (like <em>P</em>) and compare its <em>(X%)</em> to <em>usage_khours</em>'.</p>
+<p>As of yet, no model has been developed to do this properly, so YMMV.</p>
 <script>
+var formatHours = function(hours) {
+  // values are kilo-usage-hours and range in value from, say,
+  // 24.2 (7% of nightly) to
+  // 813,816.57 (~100% of release)
+
+  // So... optional "K"?
+
+  hours = Number(hours);
+  let suffix = '';
+  if (hours < 2000) {
+    // do nothing.
+  } else {
+    hours = hours / 1000;
+    suffix = 'k';
+  }
+  return Number(hours).toFixed(Math.max(0, 2 - Math.ceil(Math.log10(hours)))) + suffix;
+}
+
 var xhr = new XMLHttpRequest();
 xhr.addEventListener("load", function() {
 
@@ -98,7 +123,7 @@ xhr.addEventListener("load", function() {
         if (column.name === "usage_khours") {
           let hours = map[latestDate][channel][column.name];
           let percent = Number(Number(hours) / Number(map[weekAgoDate][channel][column.name]) * 100).toFixed(1);
-          cell.textContent = Number(hours).toFixed(2) + " (" + percent + "%)";
+          cell.textContent = formatHours(hours) + " (" + percent + "%)";
         } else {
           let crashes = map[latestDate][channel][column.name];
           let percent = Number(Number(crashes) / Number(map[weekAgoDate][channel][column.name]) * 100).toFixed(1);
