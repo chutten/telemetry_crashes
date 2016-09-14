@@ -29,7 +29,7 @@ thead {
 </head>
 <body>
 <h1>Stability Dashboard</h1>
-<h5>Analyzed date: <span id="analyzed-date"></span></h5>
+<h5>Analyzed date: <select id="analyzed-date"></select></h5>
 <h3>Firefox Desktop</h3>
 <table id="data-table">
   <thead>
@@ -53,6 +53,9 @@ thead {
 <p>To estimate how much of an inflation, take a relatively-stable crash type (like <em>P</em>) and compare its <em>(X%)</em> to <em>usage_khours</em>'.</p>
 <p>As of yet, no model has been developed to do this properly, so YMMV.</p>
 <script>
+var gData = undefined;
+var gMap = {};
+
 var formatHours = function(hours) {
   // values are kilo-usage-hours and range in value from, say,
   // 24.2 (7% of nightly) to
@@ -74,38 +77,54 @@ var formatHours = function(hours) {
 var xhr = new XMLHttpRequest();
 xhr.addEventListener("load", function() {
 
-  let data = undefined;
   try {
-    data  = JSON.parse(this.responseText).query_result.data;
+    gData  = JSON.parse(this.responseText).query_result.data;
   } catch (e) {
     console.error("Failed a JSON parse");
     console.error(e.message);
+    throw e;
+  }
+
+  // Re-arrange data into a useful map
+  gData.rows.forEach((row) => {
+    if (!(row.activity_date in gMap)) {
+      gMap[row.activity_date] = {};
+    }
+    gMap[row.activity_date][row.channel] = row;
+  });
+  let latestDate = Object.keys(gMap).sort((a, b) => a < b ? 1 : (a > b ? -1 : 0))[0];
+
+  let dateSelect = document.getElementById("analyzed-date");
+  for (let i = 0; i < 7; i++) {
+    let opt = document.createElement("option");
+    let ago = new Date(latestDate);
+    ago.setDate(ago.getDate() - i);
+    opt.textContent = opt.value = ago.toISOString().slice(0, 10);
+    dateSelect.appendChild(opt);
+  }
+  dateSelect.addEventListener("change", function() {
+    rebakeTable(this.selectedOptions[0].value);
+  });
+  rebakeTable(latestDate);
+});
+
+function rebakeTable(latestDate) {
+  let weekAgoDate = new Date(latestDate);
+  weekAgoDate.setDate(weekAgoDate.getDate() - 7);
+  weekAgoDate = weekAgoDate.toISOString().slice(0, 10);
+
+  if (!gMap[weekAgoDate]) {
+    console.error("No data from a week ago?!");
   }
 
   let table = document.getElementById("data-table");
   let theadRow = table.getElementsByTagName("tr")[0];
   let tbody = table.getElementsByTagName("tbody")[0];
 
-  let map = {};
-  data.rows.forEach((row) => {
-    if (!(row.activity_date in map)) {
-      map[row.activity_date] = {};
-    }
-    map[row.activity_date][row.channel] = row;
-  });
-  let latestDate = Object.keys(map).sort((a, b) => a < b ? 1 : (a > b ? -1 : 0))[0];
+  // Clear!
+  tbody.innerHTML = "";
 
-  let weekAgoDate = new Date(latestDate);
-  weekAgoDate.setDate(weekAgoDate.getDate() - 7);
-  weekAgoDate = weekAgoDate.toISOString().slice(0, 10);
-
-  if (!map[weekAgoDate]) {
-    console.error("No data from a week ago?!");
-  }
-
-  document.getElementById("analyzed-date").textContent = latestDate;
-
-  data.columns.forEach((column) => {
+  gData.columns.forEach((column) => {
     if (['activity_date', 'channel'].includes(column.name)) {
       return;
     }
@@ -121,23 +140,24 @@ xhr.addEventListener("load", function() {
       // if a number, format it
       if (column.type === "float") {
         if (column.name === "usage_khours") {
-          let hours = map[latestDate][channel][column.name];
-          let percent = Number(Number(hours) / Number(map[weekAgoDate][channel][column.name]) * 100).toFixed(1);
+          let hours = gMap[latestDate][channel][column.name];
+          let percent = Number(Number(hours) / Number(gMap[weekAgoDate][channel][column.name]) * 100).toFixed(1);
           cell.textContent = formatHours(hours) + " (" + percent + "%)";
         } else {
-          let crashes = map[latestDate][channel][column.name];
-          let percent = Number(Number(crashes) / Number(map[weekAgoDate][channel][column.name]) * 100).toFixed(1);
-          let usage = map[latestDate][channel]["usage_khours"];
+          let crashes = gMap[latestDate][channel][column.name];
+          let percent = Number(Number(crashes) / Number(gMap[weekAgoDate][channel][column.name]) * 100).toFixed(1);
+          let usage = gMap[latestDate][channel]["usage_khours"];
           cell.textContent = Number(crashes / usage).toFixed(2) + " (" + percent + "%)";
         }
       } else {
-        cell.textContent = map[latestDate][channel][column.name];
+        cell.textContent = gMap[latestDate][channel][column.name];
       }
       row.appendChild(cell);
     });
   });
 
-});
+}
+
 xhr.addEventListener("error", () => {
   console.error("ERROR");
 });
