@@ -30,12 +30,26 @@ td.type-float {
   text-align: right;
 }
 
+td.clickable {
+  cursor: pointer;
+}
+
+td.clickable:hover {
+  background-color: lightgrey;
+}
+
 thead {
   font-weight: bold;
 }
 
 #notice {
   color: orange;
+}
+
+#data {
+  height: 25vh;
+  width: 90vw;
+  margin: 2vmin 0;
 }
 
 #subdata {
@@ -142,10 +156,12 @@ xhr.addEventListener("load", function() {
     rebakeTable(this.selectedOptions[0].value);
     updateNotice(this.selectedOptions[0].value);
     updateSubdata(this.selectedOptions[0].value);
+    emptyData();
   });
   rebakeTable(latestDate);
   updateNotice(latestDate);
   updateSubdata(latestDate);
+  emptyData();
 });
 
 function getWeekAgo(latestDate) {
@@ -192,6 +208,10 @@ function rebakeTable(latestDate) {
           let percent = Number(Number(crashes) / Number(gMap[weekAgoDate][channel][column.name]) * 100).toFixed(1);
           let usage = gMap[latestDate][channel]["usage_khours"];
           cell.textContent = Number(crashes / usage).toFixed(2) + " (" + percent + "%)";
+          cell.addEventListener("click", () => {
+            updateData(latestDate, channel, column.name);
+          });
+          cell.classList.add("clickable");
         }
       } else {
         cell.textContent = gMap[latestDate][channel][column.name];
@@ -243,7 +263,6 @@ function updateSubdata(latestDate) {
     full_height: true,
     show_tooltips: false,
     target: "#subdata",
-    /*x_accessor: "activity_date",*/
     y_accessor: CHANNELS,
     y_scale_type: "log",
     legend: CHANNELS,
@@ -256,6 +275,42 @@ function updateSubdata(latestDate) {
     top: 50,
     right: 15,
     bottom: 40,
+  });
+}
+
+function updateData(date, channel, crash) {
+  let data = Object.keys(gMap).map(activityDate => {
+    return {
+      date: new Date(activityDate),
+      value: gMap[activityDate][channel][crash] / gMap[activityDate][channel].usage_khours,
+    };
+  });
+  MG.data_graphic({
+    title: channel + " " + crash,
+    data: data,
+    full_width: true,
+    full_height: true,
+    show_tooltips: false,
+    target: "#data",
+    legend: [channel + " " + crash],
+    legend_target: "#none",
+    markers: [{date: new Date(date), label: "Analyzed Date"}],
+    utc_time: true,
+    interpolate: d3.curveLinear,
+    left: 70,
+    top: 50,
+    right: 15,
+    bottom: 40,
+  });
+}
+
+function emptyData() {
+  MG.data_graphic({
+    chart_type: "missing-data",
+    missing_text: "Click on a crash cell to populate graph",
+    target: "#data",
+    full_width: true,
+    full_height: true,
   });
 }
 
