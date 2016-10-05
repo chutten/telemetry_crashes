@@ -202,9 +202,19 @@ function updateNotice(latestDate) {
   }
 }
 
+const THRESHOLD = 2/3;
+
 function updateSubdata(latestDate) {
   let data = [];
+  let maxDate = latestDate;
   Object.keys(gMap).forEach(activityDate => {
+    if (activityDate > maxDate) {
+      maxDate = activityDate; // need the max date to extend the graphs appropriately
+    }
+    let weekAgoData = gMap[getWeekAgo(activityDate)];
+    if (weekAgoData && gMap[activityDate].release.usage_khours < weekAgoData.release.usage_khours * THRESHOLD) {
+      return;
+    }
     let datum = { date: new Date(activityDate) };
     CHANNELS.forEach(channel => datum[channel] = gMap[activityDate][channel].usage_khours);
     data.push(datum);
@@ -219,6 +229,7 @@ function updateSubdata(latestDate) {
     target: "#subdata",
     y_accessor: CHANNELS,
     y_scale_type: "log",
+    max_x: new Date(maxDate),
     legend: CHANNELS,
     legend_target: "#none",
     yax_units: "Kuh",
