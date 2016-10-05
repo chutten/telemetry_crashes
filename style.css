@@ -40,6 +40,9 @@ thead {
   margin: 2vmin 0;
 }
 
+#data.nightly .mg-hover-line1-color {
+  fill: #4040e8;
+}
 #data.nightly .mg-line1-color {
   stroke: #4040e8;
 }
@@ -47,6 +50,9 @@ thead {
   fill: #0000FF;
 }
 
+#data.aurora .mg-hover-line1-color {
+  fill: #05b378;
+}
 #data.aurora .mg-line1-color {
   stroke: #05b378;
 }
@@ -54,6 +60,9 @@ thead {
   fill: #00FF00;
 }
 
+#data.beta .mg-hover-line1-color {
+  fill: #db4437;
+}
 #data.beta .mg-line1-color {
   stroke: #db4437;
 }
@@ -61,6 +70,9 @@ thead {
   fill: #FF0000;
 }
 
+#data.release .mg-hover-line1-color {
+  fill: #f8b128;
+}
 #data.release .mg-line1-color {
   stroke: #f8b128;
 }
