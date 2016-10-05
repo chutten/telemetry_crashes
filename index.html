@@ -202,7 +202,7 @@ function updateNotice(latestDate) {
   }
 }
 
-const THRESHOLD = 2/3;
+const THRESHOLD = 0.5;
 
 function updateSubdata(latestDate) {
   let data = [];
@@ -248,11 +248,21 @@ function updateData(date, channel, crash) {
   CHANNELS.forEach(channel => dataEl.classList.remove(channel));
   dataEl.classList.add(channel);
 
-  let data = Object.keys(gMap).map(activityDate => {
-    return {
+  let maxDate = date;
+  let data = [];
+  Object.keys(gMap).forEach(activityDate => {
+    if (activityDate > maxDate) {
+      maxDate = activityDate;
+    }
+    let weekAgoData = gMap[getWeekAgo(activityDate)];
+    if (weekAgoData && gMap[activityDate][channel].usage_khours < weekAgoData[channel].usage_khours * THRESHOLD) {
+      return;
+    }
+    let datum = {
       date: new Date(activityDate),
       value: gMap[activityDate][channel][crash] / gMap[activityDate][channel].usage_khours,
     };
+    data.push(datum);
   });
   MG.data_graphic({
     title: channel + " " + crash,
@@ -263,6 +273,7 @@ function updateData(date, channel, crash) {
     target: "#data",
     legend: [channel + " " + crash],
     legend_target: "#none",
+    max_x: new Date(maxDate),
     markers: [{date: new Date(date), label: "Analyzed Date"}],
     utc_time: true,
     interpolate: d3.curveLinear,
