@@ -245,9 +245,9 @@ function updateKuhPlot(aDate) {
 }
 
 function updateCrashPlot(date, channel, crash) {
-  let dataEl = document.getElementById("crash-plot-container");
-  CHANNELS.forEach(channel => dataEl.classList.remove(channel));
-  dataEl.classList.add(channel);
+  let containerEl = document.getElementById("crash-plot-container");
+  CHANNELS.forEach(channel => containerEl.classList.remove(channel));
+  containerEl.classList.add(channel);
 
   let maxDate = date;
   let data = [];
