@@ -30,9 +30,9 @@
   <tbody>
   </tbody>
 </table>
-<div id="data">
+<div id="crash-plot-container">
 </div>
-<div id="subdata">
+<div id="kuh-plot-container">
 </div>
 <p>Cells are of the form <em>Rate (X%)</em> where:</p>
 <dt><em>Rate</em></dt>
@@ -103,23 +103,23 @@ xhr.addEventListener("load", function() {
   dateSelect.addEventListener("change", function() {
     rebakeTable(this.selectedOptions[0].value);
     updateNotice(this.selectedOptions[0].value);
-    updateSubdata(this.selectedOptions[0].value);
-    emptyData();
+    updateKuhPlot(this.selectedOptions[0].value);
+    emptyCrashPlot();
   });
   rebakeTable(latestDate);
   updateNotice(latestDate);
-  updateSubdata(latestDate);
-  emptyData();
+  updateKuhPlot(latestDate);
+  emptyCrashPlot();
 });
 
-function getWeekAgo(latestDate) {
-  let weekAgoDate = new Date(latestDate);
+function getWeekAgo(aDate) {
+  let weekAgoDate = new Date(aDate);
   weekAgoDate.setDate(weekAgoDate.getDate() - 7);
   return weekAgoDate.toISOString().slice(0, 10);
 }
 
-function rebakeTable(latestDate) {
-  let weekAgoDate = getWeekAgo(latestDate);
+function rebakeTable(aDate) {
+  let weekAgoDate = getWeekAgo(aDate);
 
   if (!gMap[weekAgoDate]) {
     console.error("No data from a week ago?!");
@@ -148,13 +148,13 @@ function rebakeTable(latestDate) {
       // if a number, format it
       if (column.type === "float") {
         if (column.name === "usage_khours") {
-          let hours = gMap[latestDate][channel][column.name];
+          let hours = gMap[aDate][channel][column.name];
           let percent = Number(Number(hours) / Number(gMap[weekAgoDate][channel][column.name]) * 100).toFixed(1);
           cell.textContent = formatHours(hours) + " (" + percent + "%)";
         } else {
-          let crashes = gMap[latestDate][channel][column.name];
+          let crashes = gMap[aDate][channel][column.name];
           let percent = Number(Number(crashes) / Number(gMap[weekAgoDate][channel][column.name]) * 100).toFixed(1);
-          let usage = gMap[latestDate][channel]["usage_khours"];
+          let usage = gMap[aDate][channel]["usage_khours"];
           cell.textContent = Number(crashes / usage).toFixed(2) + " (" + percent + "%)";
 
           cell.addEventListener("click", function() {
@@ -163,20 +163,20 @@ function rebakeTable(latestDate) {
             }
             this.classList.add("clicked");
 
-            updateData(latestDate, channel, column.name);
+            updateCrashPlot(aDate, channel, column.name);
           });
           cell.classList.add("clickable");
         }
       } else {
-        cell.textContent = gMap[latestDate][channel][column.name];
+        cell.textContent = gMap[aDate][channel][column.name];
       }
       row.appendChild(cell);
     });
   });
 }
 
-function updateNotice(latestDate) {
-  let weekAgoDate = getWeekAgo(latestDate);
+function updateNotice(aDate) {
+  let weekAgoDate = getWeekAgo(aDate);
 
   let noticeEl = document.getElementById("notice");
   noticeEl.textContent = "\xa0";
@@ -184,7 +184,7 @@ function updateNotice(latestDate) {
   let minPercent = 10;
   let maxPercent = 0;
   CHANNELS.forEach((channel) => {
-    let hours = gMap[latestDate][channel]["usage_khours"];
+    let hours = gMap[aDate][channel]["usage_khours"];
     let percent = Number(hours) / Number(gMap[weekAgoDate][channel]["usage_khours"]);
     if (percent < minPercent) {
       minPercent = percent;
@@ -196,7 +196,7 @@ function updateNotice(latestDate) {
 
   if (maxPercent < PERCENT_NOTICE_THRESHOLD) {
     noticeEl.textContent = '' +
-      `The usage_khours for ${latestDate} are low ` +
+      `The usage_khours for ${aDate} are low ` +
       `(${Number(minPercent * 100).toFixed(1)}%~${Number(maxPercent * 100).toFixed(1)}%) ` +
       `so you may not want to use these figures.`;
   }
@@ -204,9 +204,9 @@ function updateNotice(latestDate) {
 
 const THRESHOLD = 0.5;
 
-function updateSubdata(latestDate) {
+function updateKuhPlot(aDate) {
   let data = [];
-  let maxDate = latestDate;
+  let maxDate = aDate;
   Object.keys(gMap).forEach(activityDate => {
     if (activityDate > maxDate) {
       maxDate = activityDate; // need the max date to extend the graphs appropriately
@@ -226,7 +226,7 @@ function updateSubdata(latestDate) {
     full_width: true,
     full_height: true,
     show_tooltips: false,
-    target: "#subdata",
+    target: "#kuh-plot-container",
     y_accessor: CHANNELS,
     y_scale_type: "log",
     max_x: new Date(maxDate),
@@ -235,7 +235,7 @@ function updateSubdata(latestDate) {
     legend_target: "#none",
     yax_units: "Kuh",
     yax_units_append: true,
-    markers: [{date: new Date(latestDate), label: "Analyzed Date"}],
+    markers: [{date: new Date(aDate), label: ""}],
     utc_time: true,
     left: 70,
     top: 50,
@@ -244,8 +244,8 @@ function updateSubdata(latestDate) {
   });
 }
 
-function updateData(date, channel, crash) {
-  let dataEl = document.getElementById("data");
+function updateCrashPlot(date, channel, crash) {
+  let dataEl = document.getElementById("crash-plot-container");
   CHANNELS.forEach(channel => dataEl.classList.remove(channel));
   dataEl.classList.add(channel);
 
@@ -271,11 +271,11 @@ function updateData(date, channel, crash) {
     full_width: true,
     full_height: true,
     show_tooltips: false,
-    target: "#data",
+    target: "#crash-plot-container",
     legend: [channel + " " + crash],
     legend_target: "#none",
     max_x: new Date(maxDate),
-    markers: [{date: new Date(date), label: "Analyzed Date"}],
+    markers: [{date: new Date(date), label: ""}],
     utc_time: true,
     interpolate: d3.curveLinear,
     left: 70,
@@ -285,18 +285,18 @@ function updateData(date, channel, crash) {
   });
 }
 
-function emptyData() {
+function emptyCrashPlot() {
   MG.data_graphic({
     chart_type: "missing-data",
     missing_text: "Click on a crash cell to populate graph",
-    target: "#data",
+    target: "#crash-plot-container",
     full_width: true,
     full_height: true,
   });
 }
 
 xhr.addEventListener("error", () => {
-  console.error("ERROR");
+  console.error("XHR ERROR");
 });
 xhr.open("GET", "https://sql.telemetry.mozilla.org/api/queries/1092/results.json?api_key=f7dac61893e040ca59c76fd616f082479e2a1c85");
 xhr.send();
