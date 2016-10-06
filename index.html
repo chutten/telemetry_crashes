@@ -11,6 +11,8 @@
 
 <!-- Include after MG.js' css to override some of its styles. -->
 <link href="style.css" rel="stylesheet" type="text/css">
+
+<script src="thresholds.js"></script>
 </head>
 <body>
 <h1>Stability Dashboard</h1>
@@ -237,6 +239,7 @@ function updateKuhPlot(aDate) {
     yax_units_append: true,
     markers: [{date: new Date(aDate), label: ""}],
     utc_time: true,
+    buffer: 0,
     left: 70,
     top: 50,
     right: 15,
@@ -265,6 +268,10 @@ function updateCrashPlot(date, channel, crash) {
     };
     data.push(datum);
   });
+  let baselines = [
+    {value: THRESHOLDS[channel][crash].lo, label: ""},
+    {value: THRESHOLDS[channel][crash].hi, label: ""},
+  ];
   MG.data_graphic({
     title: channel + " " + crash,
     data: data,
@@ -275,9 +282,11 @@ function updateCrashPlot(date, channel, crash) {
     legend: [channel + " " + crash],
     legend_target: "#none",
     max_x: new Date(maxDate),
+    baselines: baselines,
     markers: [{date: new Date(date), label: ""}],
     utc_time: true,
     interpolate: d3.curveLinear,
+    buffer: 0,
     left: 70,
     top: 50,
     right: 15,

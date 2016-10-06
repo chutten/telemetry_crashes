@@ -12,7 +12,7 @@ const CRASH_NAMES = {
  * Presently chosen from what appeared to be typical values.
  * Perhaps a more rigorous approach should be employed in future.
  */
-const THRESHOOLDS = {
+const THRESHOLDS = {
   "nightly": {
     [CRASH_NAMES.M]: {lo: 2.59, hi: 5.04},
     [CRASH_NAMES.MC]: {lo: 18.47, hi: 23.56},
