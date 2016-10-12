@@ -107,6 +107,7 @@ xhr.addEventListener("load", function() {
     updateKuhPlot(this.selectedOptions[0].value);
     emptyCrashPlot();
   });
+
   rebakeTable(latestDate);
   updateNotice(latestDate);
   updateKuhPlot(latestDate);
@@ -176,12 +177,8 @@ function rebakeTable(aDate) {
   });
 }
 
-function updateNotice(aDate) {
+function getKuhPercents(aDate) {
   let weekAgoDate = getWeekAgo(aDate);
-
-  let noticeEl = document.getElementById("notice");
-  noticeEl.textContent = "\xa0";
-
   let minPercent = 10;
   let maxPercent = 0;
   CHANNELS.forEach((channel) => {
@@ -194,6 +191,14 @@ function updateNotice(aDate) {
       maxPercent = percent;
     }
   });
+  return [minPercent, maxPercent];
+}
+
+function updateNotice(aDate) {
+  let noticeEl = document.getElementById("notice");
+  noticeEl.textContent = "\xa0";
+
+  let [minPercent, maxPercent] = getKuhPercents(aDate)
 
   if (maxPercent < PERCENT_NOTICE_THRESHOLD) {
     noticeEl.textContent = '' +
