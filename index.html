@@ -28,6 +28,9 @@
       <td>Beta</td>
       <td>Release</td>
     </tr>
+    <tr>
+      <td>Version</td>
+    </tr>
   </thead>
   <tbody>
   </tbody>
@@ -86,9 +89,14 @@ xhr.addEventListener("load", function() {
   }
 
   // Re-arrange data into a useful map
-  gData.rows.forEach((row) => {
+  gData.rows.forEach(row => {
     if (!(row.activity_date in gMap)) {
       gMap[row.activity_date] = {};
+    }
+    if (row.channel in gMap[row.activity_date]) {
+      if (gMap[row.activity_date][row.channel].usage_khours > row.usage_khours ) {
+        return;
+      }
     }
     gMap[row.activity_date][row.channel] = row;
   });
@@ -139,14 +147,23 @@ function rebakeTable(aDate) {
   }
 
   let table = document.getElementById("data-table");
-  let theadRow = table.getElementsByTagName("tr")[0];
+  let versionsRow = table.getElementsByTagName("thead")[0].getElementsByTagName("tr")[1];
   let tbody = table.getElementsByTagName("tbody")[0];
 
   // Clear!
   tbody.innerHTML = "";
+  versionsRow.innerHTML = "<td>Version</td>";
 
+  // Versions
+  CHANNELS.forEach(channel => {
+    let cell = document.createElement("td");
+    cell.textContent = gMap[aDate][channel].build_version;
+    versionsRow.appendChild(cell);
+  });
+
+  // Table Body (data)
   gData.columns.forEach((column) => {
-    if (['activity_date', 'channel'].includes(column.name)) {
+    if (['activity_date', 'channel', 'build_version'].includes(column.name)) {
       return;
     }
     let row = document.createElement("tr");
