@@ -92,16 +92,15 @@ xhr.addEventListener("load", function() {
     }
     gMap[row.activity_date][row.channel] = row;
   });
-  let latestDate = Object.keys(gMap).sort((a, b) => a < b ? 1 : (a > b ? -1 : 0))[0];
+  let dataDates = Object.keys(gMap).sort((a, b) => a < b ? 1 : (a > b ? -1 : 0));
+  let latestDate = dataDates[0];
 
   let dateSelect = document.getElementById("analyzed-date");
-  for (let i = 0; i < 7; i++) {
+  dataDates.forEach(dataDate => {
     let opt = document.createElement("option");
-    let ago = new Date(latestDate);
-    ago.setDate(ago.getDate() - i);
-    opt.textContent = opt.value = ago.toISOString().slice(0, 10);
+    opt.textContent = opt.value = dataDate;
     dateSelect.appendChild(opt);
-  }
+  });
   dateSelect.addEventListener("change", function() {
     rebakeTable(this.selectedOptions[0].value);
     updateNotice(this.selectedOptions[0].value);
