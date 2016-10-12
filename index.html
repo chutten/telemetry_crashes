@@ -93,7 +93,6 @@ xhr.addEventListener("load", function() {
     gMap[row.activity_date][row.channel] = row;
   });
   let dataDates = Object.keys(gMap).sort((a, b) => a < b ? 1 : (a > b ? -1 : 0));
-  let latestDate = dataDates[0];
 
   let dateSelect = document.getElementById("analyzed-date");
   dataDates.forEach(dataDate => {
@@ -108,9 +107,21 @@ xhr.addEventListener("load", function() {
     emptyCrashPlot();
   });
 
-  rebakeTable(latestDate);
-  updateNotice(latestDate);
-  updateKuhPlot(latestDate);
+  // Find the most recent date that won't show the "you might not want to use this data" notice
+  // and start there.
+  let startDate = dataDates[0]
+  dataDates.some(dataDate => {
+    let [minPercent, maxPercent] = getKuhPercents(dataDate);
+    if (maxPercent > PERCENT_NOTICE_THRESHOLD) {
+      startDate = dataDate;
+      return true;
+    }
+  });
+  document.querySelector(`[value="${startDate}"]`).selected = true;
+
+  rebakeTable(startDate);
+  updateNotice(startDate);
+  updateKuhPlot(startDate);
   emptyCrashPlot();
 });
 
