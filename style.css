@@ -90,3 +90,15 @@ thead {
   /* baleet the little circle span, as the circle char doesn't exist in all fonts */
   display: none;
 }
+
+.below-thresholds {
+  background-color: rgba(0, 255, 0, 0.3);
+}
+
+.between-thresholds {
+  background-color: lightyellow;
+}
+
+.above-thresholds {
+  background-color: lightpink;
+}
