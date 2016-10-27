@@ -205,6 +205,8 @@ function rebakeTable(aDate) {
           } else {
             cell.classList.add("above-thresholds");
           }
+
+          cell.setAttribute("title", `lo: ${THRESHOLDS[channel][column.name].lo} hi: ${THRESHOLDS[channel][column.name].hi}`);
         }
       } else {
         cell.textContent = gMap[aDate][channel][column.name];
