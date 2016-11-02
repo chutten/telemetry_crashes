@@ -120,7 +120,7 @@ xhr.addEventListener("load", function() {
   let startDate = dataDates[0]
   dataDates.some(dataDate => {
     let [minPercent, maxPercent] = getKuhPercents(dataDate);
-    if (maxPercent > PERCENT_NOTICE_THRESHOLD) {
+    if (minPercent > PERCENT_NOTICE_THRESHOLD) {
       startDate = dataDate;
       return true;
     }
@@ -239,7 +239,7 @@ function updateNotice(aDate) {
 
   let [minPercent, maxPercent] = getKuhPercents(aDate)
 
-  if (maxPercent < PERCENT_NOTICE_THRESHOLD) {
+  if (minPercent < PERCENT_NOTICE_THRESHOLD) {
     noticeEl.textContent = '' +
       `The usage_khours for ${aDate} are low ` +
       `(${Number(minPercent * 100).toFixed(1)}%~${Number(maxPercent * 100).toFixed(1)}%) ` +
