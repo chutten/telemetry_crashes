@@ -292,6 +292,7 @@ function updateCrashPlot(date, channel, crash) {
   containerEl.classList.add(channel);
 
   let maxDate = date;
+  let maxY = 0;
   let data = [];
   Object.keys(gMap).forEach(activityDate => {
     if (activityDate > maxDate) {
@@ -306,11 +307,23 @@ function updateCrashPlot(date, channel, crash) {
       value: gMap[activityDate][channel][crash] / gMap[activityDate][channel].usage_khours,
     };
     data.push(datum);
+    if (datum.value > maxY) {
+      maxY = datum.value;
+    }
   });
   let baselines = [
     {value: THRESHOLDS[channel][crash].lo, label: ""},
     {value: THRESHOLDS[channel][crash].hi, label: ""},
   ];
+
+  // Don't let spikes kill our plot's scale. Cap it to a reasonable value.
+  let yThreshold = THRESHOLDS[channel][crash].hi * 2;
+  if (maxY > yThreshold) {
+    maxY = yThreshold;
+  } else {
+    maxY = undefined;
+  }
+
   MG.data_graphic({
     title: channel + " " + crash,
     data: data,
@@ -321,6 +334,7 @@ function updateCrashPlot(date, channel, crash) {
     legend: [channel + " " + crash],
     legend_target: "#none",
     max_x: new Date(maxDate),
+    max_y: maxY,
     baselines: baselines,
     markers: [{date: new Date(date), label: ""}],
     utc_time: true,
