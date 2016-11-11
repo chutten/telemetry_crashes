@@ -109,10 +109,10 @@ xhr.addEventListener("load", function() {
     dateSelect.appendChild(opt);
   });
   dateSelect.addEventListener("change", function() {
-    rebakeTable(this.selectedOptions[0].value);
     updateNotice(this.selectedOptions[0].value);
     updateKuhPlot(this.selectedOptions[0].value);
     emptyCrashPlot();
+    rebakeTable(this.selectedOptions[0].value);
   });
 
   // Find the most recent date that won't show the "you might not want to use this data" notice
@@ -127,10 +127,10 @@ xhr.addEventListener("load", function() {
   });
   document.querySelector(`[value="${startDate}"]`).selected = true;
 
-  rebakeTable(startDate);
   updateNotice(startDate);
   updateKuhPlot(startDate);
   emptyCrashPlot();
+  rebakeTable(startDate);
 });
 
 function getWeekAgo(aDate) {
@@ -149,6 +149,12 @@ function rebakeTable(aDate) {
   let table = document.getElementById("data-table");
   let versionsRow = table.getElementsByTagName("thead")[0].getElementsByTagName("tr")[1];
   let tbody = table.getElementsByTagName("tbody")[0];
+
+  // Before we clear the table, what did we have clicked?
+  let previouslyClicked = table.getElementsByClassName("clicked")[0];
+  let clickSelector = previouslyClicked
+    ? `td[data-channel="${previouslyClicked.dataset.channel}"][data-column="${previouslyClicked.dataset.column}"]`
+    : undefined;
 
   // Clear!
   tbody.innerHTML = "";
@@ -197,6 +203,8 @@ function rebakeTable(aDate) {
             updateCrashPlot(aDate, channel, column.name);
           });
           cell.classList.add("clickable");
+          cell.dataset.channel = channel;
+          cell.dataset.column = column.name;
 
           if (crashRate < THRESHOLDS[channel][column.name].lo) {
             cell.classList.add("below-thresholds");
@@ -214,6 +222,11 @@ function rebakeTable(aDate) {
       row.appendChild(cell);
     });
   });
+
+  let toClick = document.querySelector(clickSelector);
+  if (toClick) {
+    toClick.click();
+  }
 }
 
 function getKuhPercents(aDate) {
