@@ -77,6 +77,13 @@ var formatHours = function(hours) {
   return Number(hours).toFixed(Math.max(0, 2 - Math.ceil(Math.log10(hours)))) + suffix;
 }
 
+var formatYYYYmmdd = function(d) {
+  let day = d.getUTCDate();
+  let month = (d.getUTCMonth() + 1);
+  let year = d.getUTCFullYear();
+  return `${year}-${month < 10 ? '0' + month : month}-${day < 10 ? '0' + day : day}`;
+}
+
 var xhr = new XMLHttpRequest();
 xhr.addEventListener("load", function() {
 
@@ -114,6 +121,19 @@ xhr.addEventListener("load", function() {
     emptyCrashPlot();
     rebakeTable(this.selectedOptions[0].value);
   });
+
+  // Set up click listeners on the plots
+  ['crash-plot-container', 'kuh-plot-container']
+    .map(id => document.getElementById(id))
+    .forEach(el => {
+      el.addEventListener("click", e => {
+        if (e.target && e.target.__data__ && e.target.__data__.date) {
+          let dateString = formatYYYYmmdd(e.target.__data__.date);
+          dateSelect.querySelector(`[value="${dateString}"]`).selected = true;
+          dateSelect.dispatchEvent(new Event("change"));
+        }
+      });
+    });
 
   // Find the most recent date that won't show the "you might not want to use this data" notice
   // and start there.
